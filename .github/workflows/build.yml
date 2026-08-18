@@ -12,26 +12,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Setup JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      # 3. Setup Android SDK
+          
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
-      # 4. Install system dependencies
       - name: Install dependencies (ImageMagick, jq, unzip, curl)
         run: sudo apt-get update && sudo apt-get install -y imagemagick jq unzip curl
 
-      # 5. Install Gradle 8.9
       - name: Install Gradle
         run: |
           curl -s "https://get.sdkman.io" | bash
@@ -40,7 +35,6 @@ jobs:
           sdk use gradle 8.9
           gradle --version
 
-      # 6. Read build configuration
       - name: Read build config
         id: config
         run: |
@@ -58,16 +52,10 @@ jobs:
             echo "⚠️ build-config.json not found!"
           fi
 
-      # 7. Generate keystore for signing
       - name: Generate keystore for signing
         run: |
           keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=BuildBot, OU=Dev, O=BuildBot, L=City, S=State, C=ID"
 
-      # =============================================
-      #  WEB2APK BUILD (type == web2apk)
-      # =============================================
-
-      # 8. Web2APK - Root gradle files
       - name: Web2APK - Create root gradle files
         if: env.type == 'web2apk'
         run: |
@@ -117,7 +105,6 @@ jobs:
           android.enableJetifier=true
           EOF
 
-      # 9. Web2APK - app/build.gradle
       - name: Web2APK - Create app/build.gradle
         if: env.type == 'web2apk'
         run: |
@@ -172,7 +159,6 @@ jobs:
           }
           EOF
 
-      # 10. Web2APK - MainActivity.java (unchanged)
       - name: Web2APK - Create MainActivity.java
         if: env.type == 'web2apk'
         run: |
@@ -638,7 +624,6 @@ jobs:
           }
           EOF
 
-      # 11. Web2APK - SplashActivity.java (updated with single animator wave)
       - name: Web2APK - Create SplashActivity.java
         if: env.type == 'web2apk'
         run: |
@@ -675,27 +660,10 @@ jobs:
                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
               private boolean destroyed = false;
-
-              /*
-               * =========================================================
-               * WAVE ANIMATION CONFIG
-               * =========================================================
-               */
-
               private ValueAnimator waveAnimator;
-
-              // Tinggi minimum bar
               private static final float BAR_MIN_SCALE = 0.35f;
-
-              // Tinggi maksimum bar
               private static final float BAR_MAX_SCALE = 1.0f;
-
-              // Jarak fase antar bar.
-              // Semakin besar = gelombang semakin panjang.
               private static final float BAR_PHASE_DELAY = 0.16f;
-
-              // Kecepatan satu gelombang.
-              // Semakin besar = semakin lambat.
               private static final long WAVE_DURATION = 1200L;
 
               @Override
@@ -716,12 +684,6 @@ jobs:
                   bar4 = findViewById(R.id.bar4);
                   bar5 = findViewById(R.id.bar5);
 
-                  /*
-                   * =====================================================
-                   * INITIAL TEXT STATE
-                   * =====================================================
-                   */
-
                   buildText.setText("");
 
                   thanksText.setText("");
@@ -729,27 +691,9 @@ jobs:
 
                   loadingText.setVisibility(View.INVISIBLE);
 
-                  /*
-                   * =====================================================
-                   * LOGO
-                   * =====================================================
-                   */
 
                   animateLogo();
-
-                  /*
-                   * =====================================================
-                   * WAVE LOADING
-                   * =====================================================
-                   */
-
                   startSmoothLoadingAnimation();
-
-                  /*
-                   * =====================================================
-                   * TEXT ANIMATION
-                   * =====================================================
-                   */
 
                   handler.postDelayed(() -> {
 
@@ -788,11 +732,7 @@ jobs:
                                                   handler.postDelayed(() -> {
 
                                                       if (destroyed) return;
-
-                                                      /*
-                                                       * Stop wave animation
-                                                       * sebelum pindah activity.
-                                                       */
+                                           
                                                       stopWaveAnimation();
 
                                                       startActivity(
@@ -820,12 +760,6 @@ jobs:
                   }, 500);
               }
 
-              /*
-               * =========================================================
-               * LOGO ANIMATION
-               * =========================================================
-               */
-
               private void animateLogo() {
 
                   splashLogo.setAlpha(0f);
@@ -843,12 +777,6 @@ jobs:
                           )
                           .start();
               }
-
-              /*
-               * =========================================================
-               * TEXT SCRAMBLE
-               * =========================================================
-               */
 
               private void scrambleText(
                       TextView textView,
@@ -995,12 +923,6 @@ jobs:
                   );
               }
 
-              /*
-               * =========================================================
-               * FADE IN
-               * =========================================================
-               */
-
               private void fadeIn(View view) {
 
                   view.setAlpha(0f);
@@ -1010,41 +932,6 @@ jobs:
                           .setDuration(450)
                           .start();
               }
-
-              /*
-               * =========================================================
-               * SMOOTH CONTINUOUS WAVE
-               * =========================================================
-               *
-               * BAR 1       ╭────╮
-               *             │    │
-               * BAR 2          ╭────╮
-               *                │    │
-               * BAR 3             ╭────╮
-               *                   │    │
-               * BAR 4                ╭────╮
-               *                      │    │
-               * BAR 5                   ╭────╮
-               *
-               * Semua bar menggunakan SATU animator.
-               *
-               * Jadi tidak ada:
-               *
-               * bar1 selesai
-               * bar2 mulai
-               *
-               * Melainkan:
-               *
-               * bar1 naik
-               *      bar2 mulai naik
-               *           bar3 mulai naik
-               *                bar4 mulai naik
-               *                     bar5 mulai naik
-               *
-               * Begitu bar1 mulai turun, bar2 juga sudah berada
-               * dalam fase naik/turun berikutnya.
-               * =========================================================
-               */
 
               private void startSmoothLoadingAnimation() {
 
@@ -1056,9 +943,6 @@ jobs:
                           bar5
                   };
 
-                  /*
-                   * Set posisi awal semua bar.
-                   */
                   for (View bar : bars) {
 
                       if (bar != null) {
@@ -1066,13 +950,6 @@ jobs:
                       }
                   }
 
-                  /*
-                   * Satu animator untuk seluruh gelombang.
-                   *
-                   * 0 -> 1 -> 2 -> ...
-                   *
-                   * Diulang terus.
-                   */
                   waveAnimator = ValueAnimator.ofFloat(
                           0f,
                           1f
@@ -1082,11 +959,6 @@ jobs:
                           WAVE_DURATION
                   );
 
-                  /*
-                   * Linear supaya gelombang berjalan terus
-                   * dan tidak tiba-tiba mempercepat/memperlambat
-                   * di setiap siklus.
-                   */
                   waveAnimator.setInterpolator(
                           new LinearInterpolator()
                   );
@@ -1106,46 +978,18 @@ jobs:
                       float progress =
                               (float) animation.getAnimatedValue();
 
-                      /*
-                       * Update semua bar berdasarkan fase masing-masing.
-                       */
                       for (int i = 0; i < bars.length; i++) {
 
                           View bar = bars[i];
 
                           if (bar == null) continue;
 
-                          /*
-                           * Setiap bar digeser fasenya.
-                           *
-                           * Bar 1 = fase 0
-                           * Bar 2 = fase 0.16
-                           * Bar 3 = fase 0.32
-                           * Bar 4 = fase 0.48
-                           * Bar 5 = fase 0.64
-                           */
-                          float phase =
-                                  progress
-                                  - (i * BAR_PHASE_DELAY);
-
-                          /*
-                           * Wrap supaya nilai tetap 0..1.
-                           */
                           phase = phase % 1f;
 
                           if (phase < 0f) {
                               phase += 1f;
                           }
 
-                          /*
-                           * Bentuk gelombang:
-                           *
-                           * 0.0 = bawah
-                           * 0.5 = atas
-                           * 1.0 = bawah
-                           *
-                           * sin menghasilkan transisi halus.
-                           */
                           double angle =
                                   phase * Math.PI * 2.0;
 
@@ -1154,9 +998,6 @@ jobs:
                                           ((Math.sin(angle - Math.PI / 2.0) + 1.0)
                                                   / 2.0);
 
-                          /*
-                           * Ubah nilai gelombang menjadi scaleY.
-                           */
                           float scale =
                                   BAR_MIN_SCALE
                                   + (
@@ -1174,12 +1015,6 @@ jobs:
                   waveAnimator.start();
               }
 
-              /*
-               * =========================================================
-               * STOP WAVE
-               * =========================================================
-               */
-
               private void stopWaveAnimation() {
 
                   if (waveAnimator != null) {
@@ -1191,12 +1026,6 @@ jobs:
                       waveAnimator = null;
                   }
               }
-
-              /*
-               * =========================================================
-               * DESTROY
-               * =========================================================
-               */
 
               @Override
               protected void onDestroy() {
@@ -1212,7 +1041,6 @@ jobs:
           }
           EOF
 
-      # 12. Web2APK - Drawable resources
       - name: Web2APK - Create drawable resources
         if: env.type == 'web2apk'
         run: |
@@ -1226,7 +1054,6 @@ jobs:
           </shape>
           EOF
 
-      # 13. Web2APK - AndroidManifest.xml
       - name: Web2APK - Create AndroidManifest.xml
         if: env.type == 'web2apk'
         run: |
@@ -1235,7 +1062,6 @@ jobs:
           cat > project/app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <!-- Izin umum -->
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -1244,18 +1070,14 @@ jobs:
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-              <!-- Izin notifikasi (Android 13+) -->
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-              <!-- Izin kalender -->
               <uses-permission android:name="android.permission.READ_CALENDAR" />
               <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
-              <!-- Izin mikrofon & kamera -->
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.CAMERA" />
 
-              <!-- Izin download manager -->
               <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
               <uses-permission android:name="android.permission.ACCESS_DOWNLOAD_MANAGER" />
 
@@ -1285,7 +1107,6 @@ jobs:
           </manifest>
           EOF
 
-      # 14. Web2APK - Layout files (bar tinggi rata 24dp)
       - name: Web2APK - Create layout files
         if: env.type == 'web2apk'
         run: |
@@ -1442,18 +1263,17 @@ jobs:
           </RelativeLayout>
           EOF
 
-      # 15. Web2APK - Resource files (colors, strings, styles) - FIXED
       - name: Web2APK - Create resource files
         if: env.type == 'web2apk'
         run: |
           cat > project/app/src/main/res/values/colors.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <color name="colorPrimary">#6200EE</color>
-              <color name="colorPrimaryDark">#3700B3</color>
-              <color name="colorAccent">#03DAC5</color>
-              <color name="white">#FFFFFF</color>
-              <color name="black">#000000</color>
+              <color name="colorPrimary">
+              <color name="colorPrimaryDark">
+              <color name="colorAccent">
+              <color name="white">
+              <color name="black">
           </resources>
           EOF
 
@@ -1480,7 +1300,6 @@ jobs:
           </resources>
           EOF
 
-      # 16. Web2APK - Apply URL, app name, icons, and keystore
       - name: Web2APK - Apply URL, app name, icons, and keystore
         if: env.type == 'web2apk'
         run: |
@@ -1516,7 +1335,6 @@ jobs:
           rm -f project/app/debug.keystore
           keytool -genkey -v -keystore project/app/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug, O=Android, C=US"
 
-      # 17. Web2APK - Build
       - name: Web2APK - Build
         if: env.type == 'web2apk'
         run: |
@@ -1524,7 +1342,6 @@ jobs:
           source "$HOME/.sdkman/bin/sdkman-init.sh"
           gradle assembleRelease
 
-      # 18. Web2APK - Sign APK
       - name: Web2APK - Sign APK
         if: env.type == 'web2apk'
         run: |
@@ -1538,11 +1355,6 @@ jobs:
             echo "APK Web2APK tidak ditemukan, skip signing"
           fi
 
-      # =============================================
-      #  FLUTTER BUILD (type == flutter)
-      # =============================================
-
-      # 19. Prepare Flutter project
       - name: Prepare Flutter project
         if: env.type == 'flutter'
         run: |
@@ -1565,8 +1377,7 @@ jobs:
             echo "pubspec.yaml tidak ditemukan"
             exit 1
           fi
-
-      # 20. Generate Flutter app icons
+          
       - name: Generate Flutter app icons
         if: env.type == 'flutter'
         run: |
@@ -1688,7 +1499,6 @@ jobs:
 
           echo "✅ Icons regenerated successfully."
 
-      # 21. Fix Flutter Android configuration
       - name: Fix Flutter Android configuration
         if: env.type == 'flutter'
         run: |
@@ -1718,7 +1528,6 @@ jobs:
             exit 1
           fi
 
-      # 22. Detect and set Gradle version for Flutter
       - name: Detect and set Gradle version for Flutter
         if: env.type == 'flutter'
         run: |
@@ -1741,7 +1550,6 @@ jobs:
             echo "No gradle-wrapper.properties found, using default gradle."
           fi
 
-      # 23. Detect Flutter version from pubspec
       - name: Detect Flutter version from pubspec
         if: env.type == 'flutter'
         id: flutter_detect
@@ -1821,7 +1629,6 @@ jobs:
           echo "flutter_version=$FLUTTER_VERSION" >> $GITHUB_OUTPUT
           echo "Using Flutter $FLUTTER_VERSION"
 
-      # 24. Setup Flutter SDK
       - name: Setup Flutter SDK
         if: env.type == 'flutter'
         uses: subosito/flutter-action@v2
@@ -1830,7 +1637,6 @@ jobs:
           channel: stable
           cache: true
 
-      # 25. Build Flutter APK (with retry logic)
       - name: Build Flutter APK
         if: env.type == 'flutter'
         shell: bash
@@ -2014,7 +1820,6 @@ jobs:
             exit 1
           fi
 
-      # 26. Verify Flutter APK signature
       - name: Verify Flutter APK signature
         if: env.type == 'flutter' && env.build_type == 'release'
         run: |
@@ -2027,7 +1832,6 @@ jobs:
             exit 1
           fi
 
-      # 27. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
