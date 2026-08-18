@@ -20,7 +20,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
@@ -55,6 +55,7 @@ jobs:
       - name: Generate keystore for signing
         run: |
           keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=BuildBot, OU=Dev, O=BuildBot, L=City, S=State, C=ID"
+
 
       - name: Web2APK - Create root gradle files
         if: env.type == 'web2apk'
@@ -660,10 +661,23 @@ jobs:
                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
               private boolean destroyed = false;
+
+              
+
               private ValueAnimator waveAnimator;
+
+              // Tinggi minimum bar
               private static final float BAR_MIN_SCALE = 0.35f;
+
+              // Tinggi maksimum bar
               private static final float BAR_MAX_SCALE = 1.0f;
+
+              // Jarak fase antar bar.
+              // Semakin besar = gelombang semakin panjang.
               private static final float BAR_PHASE_DELAY = 0.16f;
+
+              // Kecepatan satu gelombang.
+              // Semakin besar = semakin lambat.
               private static final long WAVE_DURATION = 1200L;
 
               @Override
@@ -684,6 +698,8 @@ jobs:
                   bar4 = findViewById(R.id.bar4);
                   bar5 = findViewById(R.id.bar5);
 
+                  
+
                   buildText.setText("");
 
                   thanksText.setText("");
@@ -691,9 +707,15 @@ jobs:
 
                   loadingText.setVisibility(View.INVISIBLE);
 
+                  
 
                   animateLogo();
+
+                  
+
                   startSmoothLoadingAnimation();
+
+                  
 
                   handler.postDelayed(() -> {
 
@@ -732,7 +754,8 @@ jobs:
                                                   handler.postDelayed(() -> {
 
                                                       if (destroyed) return;
-                                           
+
+                                                      
                                                       stopWaveAnimation();
 
                                                       startActivity(
@@ -760,6 +783,8 @@ jobs:
                   }, 500);
               }
 
+              
+
               private void animateLogo() {
 
                   splashLogo.setAlpha(0f);
@@ -777,6 +802,8 @@ jobs:
                           )
                           .start();
               }
+
+              
 
               private void scrambleText(
                       TextView textView,
@@ -923,6 +950,8 @@ jobs:
                   );
               }
 
+              
+
               private void fadeIn(View view) {
 
                   view.setAlpha(0f);
@@ -932,6 +961,8 @@ jobs:
                           .setDuration(450)
                           .start();
               }
+
+              
 
               private void startSmoothLoadingAnimation() {
 
@@ -943,6 +974,7 @@ jobs:
                           bar5
                   };
 
+                  
                   for (View bar : bars) {
 
                       if (bar != null) {
@@ -950,6 +982,7 @@ jobs:
                       }
                   }
 
+                  
                   waveAnimator = ValueAnimator.ofFloat(
                           0f,
                           1f
@@ -959,6 +992,7 @@ jobs:
                           WAVE_DURATION
                   );
 
+                  
                   waveAnimator.setInterpolator(
                           new LinearInterpolator()
                   );
@@ -978,18 +1012,26 @@ jobs:
                       float progress =
                               (float) animation.getAnimatedValue();
 
+                      
                       for (int i = 0; i < bars.length; i++) {
 
                           View bar = bars[i];
 
                           if (bar == null) continue;
 
+                          
+                          float phase =
+                                  progress
+                                  - (i * BAR_PHASE_DELAY);
+
+                          
                           phase = phase % 1f;
 
                           if (phase < 0f) {
                               phase += 1f;
                           }
 
+                          
                           double angle =
                                   phase * Math.PI * 2.0;
 
@@ -998,6 +1040,7 @@ jobs:
                                           ((Math.sin(angle - Math.PI / 2.0) + 1.0)
                                                   / 2.0);
 
+                          
                           float scale =
                                   BAR_MIN_SCALE
                                   + (
@@ -1015,6 +1058,8 @@ jobs:
                   waveAnimator.start();
               }
 
+              
+
               private void stopWaveAnimation() {
 
                   if (waveAnimator != null) {
@@ -1026,6 +1071,8 @@ jobs:
                       waveAnimator = null;
                   }
               }
+
+              
 
               @Override
               protected void onDestroy() {
@@ -1062,6 +1109,7 @@ jobs:
           cat > project/app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -1070,14 +1118,18 @@ jobs:
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+              
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+              
               <uses-permission android:name="android.permission.READ_CALENDAR" />
               <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
+              
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.CAMERA" />
 
+              
               <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
               <uses-permission android:name="android.permission.ACCESS_DOWNLOAD_MANAGER" />
 
@@ -1269,11 +1321,11 @@ jobs:
           cat > project/app/src/main/res/values/colors.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <color name="colorPrimary">
-              <color name="colorPrimaryDark">
-              <color name="colorAccent">
-              <color name="white">
-              <color name="black">
+              <color name="colorPrimary">#6200EE</color>
+              <color name="colorPrimaryDark">#3700B3</color>
+              <color name="colorAccent">#03DAC5</color>
+              <color name="white">#FFFFFF</color>
+              <color name="black">#000000</color>
           </resources>
           EOF
 
@@ -1355,6 +1407,7 @@ jobs:
             echo "APK Web2APK tidak ditemukan, skip signing"
           fi
 
+
       - name: Prepare Flutter project
         if: env.type == 'flutter'
         run: |
@@ -1377,7 +1430,7 @@ jobs:
             echo "pubspec.yaml tidak ditemukan"
             exit 1
           fi
-          
+
       - name: Generate Flutter app icons
         if: env.type == 'flutter'
         run: |
